@@ -18,9 +18,9 @@
   width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; flex-shrink: 0;
   background: var(--accent-soft); color: var(--accent-ink);
 }
-.src-ico.app { background: var(--surface-2); color: var(--text-2); }
-.src-ico.ntfy { background: color-mix(in srgb, #3b82f6 13%, var(--surface)); color: #2563eb; }
-[data-theme="dark"] .src-ico.ntfy { color: #7aa3ff; }
+.src-ico.k-app { background: var(--surface-2); color: var(--text-2); }
+.src-ico.k-ntfy { background: color-mix(in srgb, #3b82f6 13%, var(--surface)); color: #2563eb; }
+[data-theme="dark"] .src-ico.k-ntfy { color: #7aa3ff; }
 .src-main, .chan-main, .rule-main { flex: 1; min-width: 0; display: grid; gap: 2px; }
 .src-name, .chan-name, .rule-name { font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .src-sub, .chan-sub, .rule-sub { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

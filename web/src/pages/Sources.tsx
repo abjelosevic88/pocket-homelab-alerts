@@ -78,7 +78,7 @@ export default function Sources() {
                   {mine.map(x => (
                     <li key={x.id}>
                       <div className={`src-row ${x.enabled ? '' : 'off'}`} role="link" tabIndex={0} onClick={() => navigate(`/sources/${x.id}`)} onKeyDown={e => { if (e.key === 'Enter') navigate(`/sources/${x.id}`) }}>
-                        <span className={`src-ico ${x.kind}`}><Icon name={srcIcon(x)} size={17} /></span>
+                        <span className={`src-ico k-${x.kind}`}><Icon name={srcIcon(x)} size={17} /></span>
                         <span className="src-main">
                           <span className="row"><span className="src-name">{x.name}</span><SourceState x={x} /></span>
                           <span className="src-sub">{x.status === 'error' && x.enabled ? <span className="src-note bad">{x.status_note || 'Not connected'}</span> : <>{kindHint(x)} · last alert {x.last_alert_at ? ago(x.last_alert_at) : 'never'}</>}</span>
@@ -113,7 +113,7 @@ function AppsSection({ apps, onToggle, onOpen }: { apps: AppsInfo | null; onTogg
               return (
                 <li key={a.slug}>
                   <div className={`src-row ${open ? '' : 'static'} ${a.on && apps.core ? '' : 'off'}`} onClick={() => { if (open && a.source_id) onOpen(a.source_id) }}>
-                    <span className="src-ico app"><Icon name={ICON_FIX[a.icon] || a.icon} size={17} /></span>
+                    <span className="src-ico k-app"><Icon name={ICON_FIX[a.icon] || a.icon} size={17} /></span>
                     <span className="src-main">
                       <span className="src-name">{a.name}</span>
                       <span className="src-sub wrap">{a.about}</span>
@@ -203,7 +203,7 @@ export function SourcePage() {
   return (
     <div className="src-page">
       <div className="row wrap">
-        <span className={`src-ico ${x.kind}`}><Icon name={srcIcon(x)} size={17} /></span>
+        <span className={`src-ico k-${x.kind}`}><Icon name={srcIcon(x)} size={17} /></span>
         <div className="grow">
           <div className="row"><span className="src-name">{x.name}</span><SourceState x={x} /></div>
           <div className="src-sub">{kindHint(x)} · {plural(x.week.alerts, 'alert')} this week{x.week.repeats ? `, ${plural(x.week.repeats, 'repeat')}` : ''}</div>
