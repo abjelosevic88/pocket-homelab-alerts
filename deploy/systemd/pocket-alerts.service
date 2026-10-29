@@ -1,0 +1,23 @@
+[Unit]
+Description=Pocket Alerts — one inbox for every alert
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=pocket-alerts
+Group=pocket-alerts
+ExecStart=/usr/local/bin/pocket-alerts
+Environment=DATA_DIR=/var/lib/pocket-alerts
+Environment=PORT=8080
+Environment=BASE_URL=https://alerts.example.com
+Environment=SECURE_COOKIES=true
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/pocket-alerts
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

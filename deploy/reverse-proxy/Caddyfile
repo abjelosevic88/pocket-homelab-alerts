@@ -1,0 +1,8 @@
+# Pocket Alerts behind Caddy. Senders post to /notify/<key>, /hook/<key> and
+# /<key> (ntfy style); the inbox keeps a live connection open on /api/live,
+# so don't buffer responses.
+alerts.example.com {
+	reverse_proxy pocket-alerts:8080 {
+		flush_interval -1
+	}
+}
