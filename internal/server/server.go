@@ -36,6 +36,7 @@ type Server struct {
 	bg     context.Context // lives as long as the server; background sends use it
 	wg     sync.WaitGroup
 	live   *liveHub
+	feeds  *feedHub
 	limits *rateWindow
 
 	followMu  sync.Mutex
@@ -65,7 +66,7 @@ type resolvedURL struct {
 func New(cfg *config.Config, st *store.Store, log *slog.Logger, webFS fs.FS) *Server {
 	return &Server{cfg: cfg, store: st, log: log, webFS: webFS, started: time.Now(), oidc: &oidcProvider{},
 		core:     core.New(cfg.CoreURL, core.Options{DB: st.DB, TokenFile: cfg.DataDir + "/core.token", UserAgent: cfg.UserAgent}),
-		resolved: map[string]resolvedURL{}, bg: context.Background(), live: newLiveHub(),
+		resolved: map[string]resolvedURL{}, bg: context.Background(), live: newLiveHub(), feeds: newFeedHub(),
 		limits: &rateWindow{counts: map[int64]int{}}, followers: map[int64]*follower{}}
 }
 

@@ -58,6 +58,8 @@ docker run -d --name pocket-alerts -p 8080:8080 -v ./data:/data \
 
 or `docker compose up -d` with [docker-compose.yml](docker-compose.yml). Open it, create the first account, add a source and copy its address into whatever sends alerts, then add your phone under Send to. All options: [docs/configuration.md](docs/configuration.md). API and the shapes it accepts: [docs/api.md](docs/api.md). Backups: [docs/backup.md](docs/backup.md).
 
+Replacing an ntfy server or an Apprise gateway outright? Give Pocket Alerts their ports, make a source per topic or route and open it at its plain name, and put sources on a feed topic for anything that read ntfy (a dashboard, a phone relay): senders and readers keep their addresses ([docs/api.md](docs/api.md)).
+
 Coming from ntfy with a Pushover forwarder? Add a source that follows your ntfy topics (with "bring in the last 12 hours"), add Pushover under Send to, and stop the forwarder — your senders stay as they are.
 
 ## With Pocket Core

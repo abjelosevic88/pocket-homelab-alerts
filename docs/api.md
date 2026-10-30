@@ -16,6 +16,20 @@ ntfy-style topics of your own: `POST /<topic>` with your API token (`Authorizati
 password with any user name, or ntfy's `?auth=`). A new topic becomes a source. Answers are ntfy's
 (`{"id","event":"message","topic",…}`).
 
+### Open topics (replacing ntfy and Apprise without touching the senders)
+
+An admin can open a push source at its plain topic name (source page → "Old ntfy and Apprise addresses"):
+then `/<topic>`, `/notify/<topic>`, `/hook/<topic>` and ntfy's JSON `{"topic":"<topic>"}` work without the key,
+the way an ntfy server or an Apprise gateway does on a private network. Open names are box-wide and unique.
+
+### Reading alerts the ntfy way
+
+A source with a feed topic shows its alerts at `GET /<topics>/json` and `GET /<topics>/sse` (comma-separated
+topics, like ntfy): `poll=1` answers and closes; `since=all|12h|<message id>|<unix time>`; without `poll` the
+connection stays open with `open` / `keepalive` events like ntfy. No token (like ntfy's open topics), CORS open.
+Messages are ntfy's (`id`, `time`, `event`, `topic`, `title`, `message`, `priority`, `tags`, `click`); an id this
+server did not give out counts as "from now". `GET /v1/health` answers like ntfy.
+
 ## The JSON API
 
 Under `/api/v1`. Authenticate with the session cookie (browser), `Authorization: Bearer <token>`
@@ -45,7 +59,7 @@ counted in the server's `TZ`. Importance is 1 (lowest) to 5 (urgent).
 | Call | What |
 | :--- | :--- |
 | `GET /sources` | Yours, with their addresses and the last week's numbers |
-| `POST /sources` | `{kind:"push", name, topic?}` or `{kind:"ntfy", name, follow_url, follow_topics, follow_token?, backfill?}` |
+| `POST /sources` | `{kind:"push", name, topic?, open?, feed_topic?}` (open/feed_topic: admins) or `{kind:"ntfy", name, follow_url, follow_topics, follow_token?, backfill?}` |
 | `GET/PUT/DELETE /sources/{id}` | `name icon default_priority enabled muted` (+ the follow fields) |
 | `POST /sources/{id}/key` | A new secret address; the old one stops working |
 | `POST /sources/{id}/snooze` | `{minutes}` or `{until:"tomorrow"}`; `{minutes:0}` wakes it up |

@@ -42,6 +42,12 @@ func (s *Server) Router() http.Handler {
 	r.Post("/", s.handleNtfyPublish)
 	r.Post("/{topic}", s.handleNtfyPublish)
 	r.Put("/{topic}", s.handleNtfyPublish)
+	// …and read the ntfy way (see feed.go); /v1/health as ntfy answers it.
+	r.Get("/{topics}/json", s.handleFeedJSON)
+	r.Get("/{topics}/sse", s.handleFeedSSE)
+	r.Get("/v1/health", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, http.StatusOK, map[string]any{"healthy": true})
+	})
 
 	// Live updates stay open, so they live outside /api/v1 and its timeout.
 	r.With(s.requireAuth).Get("/api/live", s.handleLive)

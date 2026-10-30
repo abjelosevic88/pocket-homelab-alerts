@@ -7,17 +7,17 @@ import (
 )
 
 const sourceCols = `id, user_id, name, kind, topic, push_key, icon, default_priority, enabled, muted, snoozed_until,
-	follow_url, follow_topics, follow_token, follow_cursor, app_slug, status, status_note, last_alert_at, created_at, updated_at`
+	follow_url, follow_topics, follow_token, follow_cursor, app_slug, status, status_note, last_alert_at, created_at, updated_at, open, feed_topic`
 
 func scanSource(row interface{ Scan(...any) error }) (*Source, error) {
 	var x Source
 	var snooze, last sql.NullString
-	var enabled, muted int
+	var enabled, muted, open int
 	if err := row.Scan(&x.ID, &x.UserID, &x.Name, &x.Kind, &x.Topic, &x.PushKey, &x.Icon, &x.DefaultPriority, &enabled, &muted, &snooze,
-		&x.FollowURL, &x.FollowTopics, &x.FollowToken, &x.FollowCursor, &x.AppSlug, &x.Status, &x.StatusNote, &last, &x.CreatedAt, &x.UpdatedAt); err != nil {
+		&x.FollowURL, &x.FollowTopics, &x.FollowToken, &x.FollowCursor, &x.AppSlug, &x.Status, &x.StatusNote, &last, &x.CreatedAt, &x.UpdatedAt, &open, &x.FeedTopic); err != nil {
 		return nil, notFound(err)
 	}
-	x.Enabled, x.Muted = enabled == 1, muted == 1
+	x.Enabled, x.Muted, x.Open = enabled == 1, muted == 1, open == 1
 	x.SnoozedUntil, x.LastAlertAt = nullStr(snooze), nullStr(last)
 	return &x, nil
 }
@@ -50,10 +50,10 @@ func (s *Store) CreateSource(ctx context.Context, uid int64, x *Source) error {
 	}
 	now := Now()
 	res, err := s.DB.ExecContext(ctx, `INSERT INTO sources (user_id, name, kind, topic, push_key, icon, default_priority, enabled, muted, snoozed_until,
-		follow_url, follow_topics, follow_token, follow_cursor, app_slug, status, status_note, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		follow_url, follow_topics, follow_token, follow_cursor, app_slug, status, status_note, created_at, updated_at, open, feed_topic)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		uid, x.Name, x.Kind, x.Topic, x.PushKey, x.Icon, x.DefaultPriority, boolInt(x.Enabled), boolInt(x.Muted), strOrNil(x.SnoozedUntil),
-		x.FollowURL, x.FollowTopics, x.FollowToken, x.FollowCursor, x.AppSlug, x.Status, x.StatusNote, now, now)
+		x.FollowURL, x.FollowTopics, x.FollowToken, x.FollowCursor, x.AppSlug, x.Status, x.StatusNote, now, now, boolInt(x.Open), x.FeedTopic)
 	if err != nil {
 		return conflict(err)
 	}
@@ -66,9 +66,9 @@ func (s *Store) CreateSource(ctx context.Context, uid int64, x *Source) error {
 func (s *Store) UpdateSource(ctx context.Context, uid int64, x *Source) error {
 	x.UpdatedAt = Now()
 	res, err := s.DB.ExecContext(ctx, `UPDATE sources SET name = ?, topic = ?, icon = ?, default_priority = ?, enabled = ?, muted = ?, snoozed_until = ?,
-		follow_url = ?, follow_topics = ?, follow_token = ?, follow_cursor = ?, push_key = ?, updated_at = ? WHERE id = ? AND user_id = ?`,
+		follow_url = ?, follow_topics = ?, follow_token = ?, follow_cursor = ?, push_key = ?, open = ?, feed_topic = ?, updated_at = ? WHERE id = ? AND user_id = ?`,
 		x.Name, x.Topic, x.Icon, x.DefaultPriority, boolInt(x.Enabled), boolInt(x.Muted), strOrNil(x.SnoozedUntil),
-		x.FollowURL, x.FollowTopics, x.FollowToken, x.FollowCursor, x.PushKey, x.UpdatedAt, x.ID, uid)
+		x.FollowURL, x.FollowTopics, x.FollowToken, x.FollowCursor, x.PushKey, boolInt(x.Open), x.FeedTopic, x.UpdatedAt, x.ID, uid)
 	if err != nil {
 		return conflict(err)
 	}
@@ -89,6 +89,15 @@ func (s *Store) SourceByKey(ctx context.Context, key string) (*Source, error) {
 		return nil, ErrNotFound
 	}
 	return scanSource(s.DB.QueryRowContext(ctx, `SELECT `+sourceCols+` FROM sources WHERE push_key = ?`, key))
+}
+
+// SourceByOpenTopic finds the source that takes a topic without its key
+// (any person; open topic names are box-wide).
+func (s *Store) SourceByOpenTopic(ctx context.Context, topic string) (*Source, error) {
+	if topic == "" {
+		return nil, ErrNotFound
+	}
+	return scanSource(s.DB.QueryRowContext(ctx, `SELECT `+sourceCols+` FROM sources WHERE open = 1 AND topic = ?`, topic))
 }
 
 // SourceByTopic finds a person's push source for an ntfy-style topic.

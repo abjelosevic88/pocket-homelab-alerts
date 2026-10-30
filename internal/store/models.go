@@ -40,6 +40,8 @@ type Source struct {
 	FollowToken     string  `json:"follow_token"`
 	FollowCursor    string  `json:"-"`
 	AppSlug         string  `json:"app_slug"`
+	Open            bool    `json:"open"`       // also takes alerts at its plain topic name (no key)
+	FeedTopic       string  `json:"feed_topic"` // its alerts can be read on this ntfy-style topic
 	Status          string  `json:"status"`
 	StatusNote      string  `json:"status_note"`
 	LastAlertAt     *string `json:"last_alert_at"`

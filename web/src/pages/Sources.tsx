@@ -152,6 +152,8 @@ export function SourcePage() {
   const [app, setApp] = useState<EventApp | null>(null)
   const [ask, setAsk] = useState<'' | 'key' | 'delete'>('')
   const [busy, setBusy] = useState(false)
+  const { user } = useApp()
+  const isAdmin = user?.role === 'admin'
   useCrumb(x?.name)
 
   const load = useCallback(() => {
@@ -277,6 +279,20 @@ export function SourcePage() {
         </SettingRow>
       </MSection>
 
+      {x.kind === 'push' && isAdmin && (
+        <MSection title="Old ntfy and Apprise addresses" icon="link" sub="For senders that used ntfy or Apprise on this network: they keep the address they have, and dashboards that read ntfy keep reading. Only admins see this.">
+          <SettingRow title="Topic" help={x.topic ? <>Plain addresses: <code>/{x.topic}</code> (ntfy) and <code>/notify/{x.topic}</code> (Apprise).</> : 'A short name, like alerts or backups.'}>
+            <NameInput value={x.topic} onSave={v => save({ topic: v })} label="Topic" />
+          </SettingRow>
+          <SettingRow title="Take alerts at the plain name" help="No secret address needed, like ntfy and Apprise. Only safe on a private network; the name is shared by everyone on this box.">
+            <Switch checked={x.open} disabled={!x.topic} onChange={v => save({ open: v }, v ? 'Open at its plain name' : 'Only the secret address now')} label="Take alerts at the plain name" />
+          </SettingRow>
+          <SettingRow title="Show on the ntfy topic" help={<>Things that read ntfy topics (a dashboard drawer, a phone relay) see these alerts at <code>/{x.feed_topic || 'topic'}/json</code>. Empty = on no topic.</>}>
+            <NameInput value={x.feed_topic} onSave={v => save({ feed_topic: v })} empty label="ntfy topic" />
+          </SettingRow>
+        </MSection>
+      )}
+
       <MSection title="Latest alerts" icon="inbox" flush actions={<Link to={`/?source=${x.id}`} className="btn sm ghost">In the inbox</Link>}>
         {!recent ? <div className="set-section-body"><Loading /></div> : recent.length === 0
           ? <Empty icon="inbox" title="Nothing yet">Send a test to see it arrive.</Empty>
@@ -304,10 +320,10 @@ export function SourcePage() {
 }
 
 /** A name field that saves when you leave it. */
-function NameInput({ value, onSave }: { value: string; onSave: (v: string) => void }) {
+function NameInput({ value, onSave, empty = false, label = 'Name' }: { value: string; onSave: (v: string) => void; empty?: boolean; label?: string }) {
   const [v, setV] = useState(value)
   useEffect(() => setV(value), [value])
-  return <input className="qh-control" value={v} maxLength={80} onChange={e => setV(e.target.value)} onBlur={() => { if (v.trim() && v.trim() !== value) onSave(v.trim()) }} onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }} aria-label="Name" />
+  return <input className="qh-control" value={v} maxLength={80} onChange={e => setV(e.target.value)} onBlur={() => { if ((v.trim() || empty) && v.trim() !== value) onSave(v.trim()) }} onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }} aria-label={label} />
 }
 
 /** Server, topics and token of a followed ntfy server. */

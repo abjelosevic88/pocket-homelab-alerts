@@ -160,6 +160,9 @@ func (s *Server) receive(ctx context.Context, uid int64, src *store.Source, in i
 	}
 	s.received.Add(1)
 	s.live.send(uid, liveEvent{Type: "alert", ID: a.ID, New: true})
+	if src.FeedTopic != "" {
+		s.feeds.send(store.FeedItem{Alert: *a, FeedTopic: src.FeedTopic})
+	}
 	s.publish(ctx, uid, "alerts.received", fmt.Sprint(a.ID), map[string]any{
 		"alert_id": a.ID, "title": a.Title, "body": clip(a.Body, 500), "priority": a.Priority, "source": a.SourceName, "state": a.State, "tags": a.Tags,
 		"url": s.alertLink(a.ID),

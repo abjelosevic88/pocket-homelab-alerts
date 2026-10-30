@@ -18,6 +18,7 @@ func (s *Server) sourceView(ctx context.Context, x *store.Source, stats map[int6
 		"id": x.ID, "name": x.Name, "kind": x.Kind, "topic": x.Topic, "icon": x.Icon, "default_priority": x.DefaultPriority,
 		"enabled": x.Enabled, "muted": x.Muted, "snoozed_until": nil, "follow_url": x.FollowURL, "follow_topics": x.FollowTopics,
 		"follow_token": mask(x.FollowToken), "app_slug": x.AppSlug, "status": x.Status, "status_note": x.StatusNote,
+		"open": x.Open, "feed_topic": x.FeedTopic,
 		"last_alert_at": x.LastAlertAt, "created_at": x.CreatedAt,
 	}
 	if x.Snoozed(store.Now()) {
@@ -74,10 +75,12 @@ type sourceInput struct {
 	FollowURL       *string `json:"follow_url"`
 	FollowTopics    *string `json:"follow_topics"`
 	FollowToken     *string `json:"follow_token"`
-	Backfill        bool    `json:"backfill"` // a new follower brings in the last 12 hours
+	Backfill        bool    `json:"backfill"`   // a new follower brings in the last 12 hours
+	Open            *bool   `json:"open"`       // admins only
+	FeedTopic       *string `json:"feed_topic"` // admins only
 }
 
-func (in sourceInput) apply(x *store.Source) string {
+func (in sourceInput) apply(x *store.Source, admin bool) string {
 	if in.Name != nil {
 		x.Name = clip(strings.TrimSpace(*in.Name), 80)
 	}
@@ -127,10 +130,31 @@ func (in sourceInput) apply(x *store.Source) string {
 			x.FollowToken = strings.TrimSpace(*in.FollowToken)
 		}
 	}
+	if (in.Open != nil || in.FeedTopic != nil) && !admin {
+		return "only the box's admins can open a topic or put a source on a feed"
+	}
+	if in.Open != nil {
+		if *in.Open && (x.Kind != "push" || x.Topic == "") {
+			return "give the source a topic first; that name is its open address"
+		}
+		x.Open = *in.Open
+	}
+	if in.FeedTopic != nil {
+		t := strings.TrimSpace(*in.FeedTopic)
+		if t != "" && store.CleanTopic(t) != t {
+			return "a feed topic has only letters, digits, - and _"
+		}
+		x.FeedTopic = t
+	}
 	if x.Name == "" {
 		x.Name = firstNonEmpty(x.Topic, firstNonEmpty(x.FollowTopics, "Untitled"))
 	}
 	return ""
+}
+
+func isAdmin(ctx context.Context) bool {
+	u := userFrom(ctx)
+	return u != nil && u.Role == "admin"
 }
 
 func (s *Server) handleCreateSource(w http.ResponseWriter, r *http.Request) {
@@ -149,7 +173,7 @@ func (s *Server) handleCreateSource(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	x := &store.Source{Kind: in.Kind, Enabled: true}
-	if msg := in.apply(x); msg != "" {
+	if msg := in.apply(x, isAdmin(ctx)); msg != "" {
 		writeErr(w, http.StatusBadRequest, msg)
 		return
 	}
@@ -164,7 +188,7 @@ func (s *Server) handleCreateSource(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := s.store.CreateSource(ctx, uid, x); err != nil {
 		if errors.Is(err, store.ErrConflict) {
-			writeErr(w, http.StatusConflict, "you already have a source with this topic")
+			writeErr(w, http.StatusConflict, "this topic is taken: another source already has it (or takes it openly)")
 			return
 		}
 		s.fail(w, err, "source")
@@ -189,13 +213,13 @@ func (s *Server) handleUpdateSource(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusBadRequest, "invalid json")
 		return
 	}
-	if msg := in.apply(x); msg != "" {
+	if msg := in.apply(x, isAdmin(ctx)); msg != "" {
 		writeErr(w, http.StatusBadRequest, msg)
 		return
 	}
 	if err := s.store.UpdateSource(ctx, uid, x); err != nil {
 		if errors.Is(err, store.ErrConflict) {
-			writeErr(w, http.StatusConflict, "you already have a source with this topic")
+			writeErr(w, http.StatusConflict, "this topic is taken: another source already has it (or takes it openly)")
 			return
 		}
 		s.fail(w, err, "source")

@@ -35,6 +35,10 @@ import (
 //     password) and becomes a source of its own on first use.
 //   - Webhook: POST /hook/<key> with JSON {title, message, priority, tags,
 //     click} or plain text.
+//
+// An "open" source also answers at its plain topic name instead of the key
+// (/<topic>, /notify/<topic>, /hook/<topic>) — how ntfy and Apprise work on
+// a private network — so they can be replaced without touching the senders.
 
 const ingestMax = 1 << 20
 
@@ -86,6 +90,9 @@ var appriseTypes = map[string]int{"info": 3, "success": 3, "warning": 4, "failur
 
 func (s *Server) ingestSource(w http.ResponseWriter, r *http.Request, key string) (*store.Source, bool) {
 	src, err := s.store.SourceByKey(r.Context(), key)
+	if err != nil {
+		src, err = s.store.SourceByOpenTopic(r.Context(), key)
+	}
 	if err != nil {
 		writeErr(w, http.StatusNotFound, "no source has this address")
 		return nil, false
@@ -241,6 +248,9 @@ var errNeedToken = errors.New("this topic needs your Pocket Alerts API token (Se
 func (s *Server) ntfySource(r *http.Request, topic string) (*store.Source, error) {
 	ctx := r.Context()
 	if src, err := s.store.SourceByKey(ctx, topic); err == nil {
+		return src, nil
+	}
+	if src, err := s.store.SourceByOpenTopic(ctx, topic); err == nil {
 		return src, nil
 	}
 	clean := store.CleanTopic(topic)

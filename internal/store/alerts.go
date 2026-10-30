@@ -443,3 +443,61 @@ func (s *Store) ChannelFailures(ctx context.Context, channelID int64) int {
 	}
 	return n
 }
+
+// FeedItem is an alert as an ntfy-style subscriber reads it.
+type FeedItem struct {
+	Alert
+	FeedTopic string
+}
+
+// FeedAlerts lists alerts of sources that publish on these topics, oldest
+// first: after an alert id (afterID > 0) or since a time.
+func (s *Store) FeedAlerts(ctx context.Context, topics []string, afterID int64, since string, limit int) ([]FeedItem, error) {
+	if len(topics) == 0 {
+		return nil, nil
+	}
+	cols := strings.Fields(strings.ReplaceAll(alertCols, ",", " "))
+	for i, c := range cols {
+		cols[i] = "a." + c
+	}
+	q := `SELECT ` + strings.Join(cols, ", ") + `, src.feed_topic FROM alerts a JOIN sources src ON src.id = a.source_id
+		WHERE src.feed_topic IN (` + strings.TrimSuffix(strings.Repeat("?,", len(topics)), ",") + `)`
+	args := []any{}
+	for _, t := range topics {
+		args = append(args, t)
+	}
+	if afterID > 0 {
+		q += ` AND a.id > ?`
+		args = append(args, afterID)
+	} else {
+		q += ` AND a.received_at >= ?`
+		args = append(args, since)
+	}
+	q += ` ORDER BY a.id LIMIT ?`
+	args = append(args, limit)
+	rows, err := s.DB.QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []FeedItem{}
+	for rows.Next() {
+		var it FeedItem
+		var topic string
+		x, err := scanAlert(scanTail{rows, &topic})
+		if err != nil {
+			return nil, err
+		}
+		it.Alert, it.FeedTopic = *x, topic
+		out = append(out, it)
+	}
+	return out, rows.Err()
+}
+
+// scanTail scans the alert columns plus extra trailing columns.
+type scanTail struct {
+	r     interface{ Scan(...any) error }
+	extra *string
+}
+
+func (t scanTail) Scan(dest ...any) error { return t.r.Scan(append(dest, t.extra)...) }

@@ -703,3 +703,110 @@ func TestSplitText(t *testing.T) {
 		t.Fatal("fingerprints")
 	}
 }
+
+func TestOpenTopicsAndTheNtfyFeed(t *testing.T) {
+	a := newApp(t, nil)
+	sid, _ := a.source(a.alice, map[string]any{"name": "Radio", "topic": "radio"})
+	// only admins open topics or put sources on a feed
+	bid, _ := a.source(a.bob, map[string]any{"name": "Mine", "topic": "mine"})
+	a.expect(400, a.bob, "PUT", fmt.Sprintf("/api/v1/sources/%d", bid), map[string]any{"open": true})
+	a.expect(400, a.bob, "PUT", fmt.Sprintf("/api/v1/sources/%d", bid), map[string]any{"feed_topic": "alerts"})
+	// not open yet: the plain name is not an address
+	if code, _ := a.post("/notify/radio", `{"body":"x"}`, map[string]string{"Content-Type": "application/json"}); code != 404 {
+		t.Fatalf("closed topic → %d", code)
+	}
+	a.ok(a.alice, "PUT", fmt.Sprintf("/api/v1/sources/%d", sid), map[string]any{"open": true, "feed_topic": "alerts"})
+	// the same name can't be opened twice on the box
+	gid, _ := a.source(a.alice, map[string]any{"name": "General", "topic": "general"})
+	a.expect(409, a.alice, "PUT", fmt.Sprintf("/api/v1/sources/%d", gid), map[string]any{"topic": "radio", "open": true})
+	a.ok(a.alice, "PUT", fmt.Sprintf("/api/v1/sources/%d", gid), map[string]any{"open": true, "feed_topic": "downloads"})
+
+	// Apprise, ntfy and webhook shapes at the plain name, no token
+	for _, p := range []struct{ path, body string }{{"/notify/radio", `{"title":"A station stopped","body":"FIP","type":"warning"}`}, {"/radio", "ntfy style"}, {"/hook/general", "hook style"}} {
+		hdr := map[string]string{}
+		if strings.HasPrefix(p.body, "{") {
+			hdr["Content-Type"] = "application/json"
+		}
+		if code, m := a.post(p.path, p.body, hdr); code != 200 {
+			t.Fatalf("%s → %d %v", p.path, code, m)
+		}
+	}
+	if code, _ := a.post("/", `{"topic":"general","message":"json at root"}`, map[string]string{"Content-Type": "application/json"}); code != 200 {
+		t.Fatal("ntfy json to an open topic")
+	}
+	if l := a.alerts(a.alice, ""); len(l) != 4 {
+		t.Fatalf("alice has %d alerts", len(l))
+	}
+
+	// read it back the ntfy way: poll, since, topic per feed
+	res, err := http.Get(a.url + "/alerts,downloads/json?poll=1&since=all")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := io.ReadAll(res.Body)
+	res.Body.Close()
+	lines := strings.Split(strings.TrimSpace(string(body)), "\n")
+	if res.Header.Get("Access-Control-Allow-Origin") != "*" || len(lines) != 4 {
+		t.Fatalf("feed (%d lines): %s", len(lines), body)
+	}
+	var first, last map[string]any
+	_ = json.Unmarshal([]byte(lines[0]), &first)
+	_ = json.Unmarshal([]byte(lines[3]), &last)
+	if first["event"] != "message" || first["topic"] != "alerts" || first["title"] != "A station stopped" || last["topic"] != "downloads" {
+		t.Fatalf("first %v last %v", first, last)
+	}
+	res, _ = http.Get(a.url + "/alerts/json?poll=1&since=" + first["id"].(string))
+	body, _ = io.ReadAll(res.Body)
+	res.Body.Close()
+	if n := len(strings.Split(strings.TrimSpace(string(body)), "\n")); n != 1 {
+		t.Fatalf("since an id: %d lines: %s", n, body)
+	}
+	// an id this server never gave (an old ntfy id) starts from now
+	res, _ = http.Get(a.url + "/alerts/json?poll=1&since=2jHVjhXAk9M3")
+	body, _ = io.ReadAll(res.Body)
+	res.Body.Close()
+	if strings.TrimSpace(string(body)) != "" {
+		t.Fatalf("unknown id gave history: %s", body)
+	}
+
+	// live: SSE gets the next one
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	req, _ := http.NewRequestWithContext(ctx, "GET", a.url+"/alerts/sse", nil)
+	res, err = http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	got := make(chan string, 1)
+	go func() {
+		buf := make([]byte, 8192)
+		var all string
+		for {
+			n, err := res.Body.Read(buf)
+			all += string(buf[:n])
+			if strings.Contains(all, "live one") || err != nil {
+				got <- all
+				return
+			}
+		}
+	}()
+	time.Sleep(200 * time.Millisecond)
+	a.post("/radio", "live one", nil)
+	select {
+	case s := <-got:
+		if !strings.Contains(s, "event: open") || !strings.Contains(s, `data: {"id":"a`) || !strings.Contains(s, "live one") {
+			t.Fatalf("sse = %s", s)
+		}
+	case <-ctx.Done():
+		t.Fatal("no live message")
+	}
+	// Bob's sources are on no feed
+	if res, _ := http.Get(a.url + "/mine/json?poll=1&since=all"); res != nil {
+		b, _ := io.ReadAll(res.Body)
+		res.Body.Close()
+		if strings.TrimSpace(string(b)) != "" {
+			t.Fatalf("bob's alerts on a feed: %s", b)
+		}
+	}
+}

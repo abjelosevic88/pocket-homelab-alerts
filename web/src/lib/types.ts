@@ -93,6 +93,8 @@ export interface Source {
   enabled: boolean; muted: boolean; snoozed_until: string | null
   follow_url: string; follow_topics: string; follow_token: string
   app_slug: string
+  open: boolean          // also takes alerts at its plain topic name (admins set it)
+  feed_topic: string     // its alerts can be read on this ntfy-style topic
   status: '' | 'ok' | 'error'; status_note: string
   last_alert_at: string | null; created_at: string
   addresses?: SourceAddresses
