@@ -287,6 +287,11 @@ export function SourcePage() {
           <SettingRow title="Take alerts at the plain name" help="No secret address needed, like ntfy and Apprise. Only safe on a private network; the name is shared by everyone on this box.">
             <Switch checked={x.open} disabled={!x.topic} onChange={v => save({ open: v }, v ? 'Open at its plain name' : 'Only the secret address now')} label="Take alerts at the plain name" />
           </SettingRow>
+        </MSection>
+      )}
+
+      {isAdmin && (
+        <MSection title="ntfy topic" icon="link" sub="For things that read ntfy topics, like a dashboard drawer or the phone relay. Works for every source, Pocket apps included. Only admins see this.">
           <SettingRow title="Show on the ntfy topic" help={<>Things that read ntfy topics (a dashboard drawer, a phone relay) see these alerts at <code>/{x.feed_topic || 'topic'}/json</code>. Empty = on no topic.</>}>
             <NameInput value={x.feed_topic} onSave={v => save({ feed_topic: v })} empty label="ntfy topic" />
           </SettingRow>
