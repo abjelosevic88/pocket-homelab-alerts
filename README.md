@@ -64,7 +64,7 @@ Coming from ntfy with a Pushover forwarder? Add a source that follows your ntfy 
 
 ## With Pocket Core
 
-Set `CORE_URL` and `CORE_REGISTRATION_KEY` and Alerts joins the box: people sign in with Pocket Core; alerts from Pocket Monitoring, Backups, Documents, Subtitles and AI come in (an `events:read` link each); "Make a task" acts in your Pocket Tasks (`tasks:write`) and "Explain" uses Pocket AI — nothing to paste. Other Pocket apps can read your alerts (`alerts:read`, e.g. Pocket Day) or send you one (`alerts:write`). Events on the bus: `alerts.received` (Pocket Flows can act on any alert) and `alerts.done`. Without Core, Tasks and AI can be connected directly; the Core-only choices stay visible, greyed out.
+Set `CORE_URL` and `CORE_REGISTRATION_KEY` and Alerts joins the box: people sign in with Pocket Core; alerts from Pocket Monitoring, Backups, Documents, Subtitles, Tasks (reminders) and AI come in (an `events:read` link each); "Make a task" acts in your Pocket Tasks (`tasks:write`) and "Explain" uses Pocket AI — nothing to paste. Other Pocket apps can read your alerts (`alerts:read`, e.g. Pocket Day) or send you one (`alerts:write`). Events on the bus: `alerts.received` (Pocket Flows can act on any alert) and `alerts.done`. Without Core, Tasks and AI can be connected directly; the Core-only choices stay visible, greyed out.
 
 ## Develop
 

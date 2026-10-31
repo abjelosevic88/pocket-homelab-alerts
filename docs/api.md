@@ -86,4 +86,4 @@ counted in the server's `TZ`. Importance is 1 (lowest) to 5 (urgent).
 Offers `alerts:read` (`/dashboard /alerts /alerts/{id} /sources /day/{date}`) and `alerts:write` (`POST /alerts` — the
 acting app becomes the source). Publishes `alerts.received` (every new alert: `alert_id title body priority source
 state tags url`) and `alerts.done`. Uses `tasks:write` on Pocket Tasks and `events:read` on Pocket Monitoring, Backups,
-Documents, Subtitles and AI (their alert events become alerts; a "resolved" event closes the alert it resolves).
+Documents, Subtitles, Tasks and AI (their alert events — and Tasks' reminders — become alerts; a "resolved" event closes the alert it resolves).
