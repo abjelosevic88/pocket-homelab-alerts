@@ -53,6 +53,9 @@ var eventApps = []eventApp{
 	{"subtitles", "Pocket Subtitles", "text", "Subtitles that could not be synced.", []alertTopic{
 		{topic: "subtitles.failed", title: "Subtitles could not be synced", priority: 3, tags: []string{"speech_balloon"}},
 	}},
+	{"tasks", "Pocket Tasks", "check-square", "Task reminders at the time you set them.", []alertTopic{
+		{topic: "tasks.reminder", title: "Todo due", priority: 3, tags: []string{"alarm_clock"}},
+	}},
 	{"ai", "Pocket AI", "sparkles", "Pocket AI waiting for your answer, and scheduled runs that need you.", []alertTopic{
 		{topic: "ai.needs_input", title: "Pocket AI needs your answer", priority: 4, tags: []string{"speech_balloon"}},
 		{topic: "ai.schedule_attention", title: "A scheduled AI run needs you", priority: 4, tags: []string{"robot"}},
@@ -258,6 +261,9 @@ func (s *Server) handleEvent(ctx context.Context, e core.Event) {
 	}
 	body := payloadStr(p, "message", "error", "reason", "detail", "body", "summary")
 	if body == "" {
+		body = dueText(payloadStr(p, "due"))
+	}
+	if body == "" {
 		body = e.Subject
 	}
 	pr := t.priority
@@ -335,4 +341,16 @@ func (s *Server) ensureAppSource(ctx context.Context, uid int64, slug string, on
 	}
 	src.Enabled = on
 	return src, s.store.UpdateSource(ctx, uid, src)
+}
+
+// dueText says when a task is due from Pocket Tasks' floating local date
+// ("2026-10-21" or "2026-10-21T09:00:00"); "" when there is none.
+func dueText(due string) string {
+	if t, err := time.Parse("2006-01-02T15:04:05", due); err == nil {
+		return "Due " + t.Format("Mon 2 Jan, 15:04")
+	}
+	if t, err := time.Parse("2006-01-02", due); err == nil {
+		return "Due " + t.Format("Mon 2 Jan")
+	}
+	return ""
 }
