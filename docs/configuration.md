@@ -17,7 +17,7 @@ Environment variables; every one has a default. Everything personal — sources,
 | `OIDC_ISSUER`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`, `OIDC_NAME`, `OIDC_AUTO_CREATE` | – | Sign in with an OpenID Connect provider (not needed with Pocket Core) |
 | `NOTIFY_URL`, `NOTIFY_FORMAT` | – | Pocket Alerts' own notices (a channel that keeps failing): Apprise (`…/notify/key`), ntfy topic URL or JSON webhook; format `apprise`/`ntfy`/`json` |
 | `OPENAI_API_KEY`, `OPENAI_MODEL`, `OPENAI_BASE_URL` | – | "Explain" and questions without Pocket AI |
-| `CORE_URL`, `CORE_REGISTRATION_KEY`, `CORE_APP_URL` | – | Pocket Core |
+| `CORE_URL`, `CORE_REGISTRATION_KEY`, `CORE_APP_URL` | – | Pocket Core (also what Pocket Hub channels send through) |
 | `TRUST_PROXY`, `METRICS_ENABLED`, `LOG_LEVEL`, `LOG_FORMAT` | `true`, `true`, `info`, `text` | |
 | `DEMO_DATA` | `false` | Seed seven sources, three channels, five rules and ten weeks of alerts into the owner account (screenshots, trying it out); nothing is really sent and followers do not connect |
 

@@ -70,9 +70,16 @@ counted in the server's `TZ`. Importance is 1 (lowest) to 5 (urgent).
 
 | Call | What |
 | :--- | :--- |
-| `GET/POST /channels`, `PUT/DELETE /channels/{id}` | `{name, kind: pushover\|ntfy\|apprise\|webhook, config, min_priority, enabled}`. Config: Pushover `user token device? sound? max_priority?`; ntfy `url topic token?`; Apprise `url tag?`; webhook `url secret?` (sent as Bearer). Secrets come back masked |
+| `GET/POST /channels`, `PUT/DELETE /channels/{id}` | `{name, kind: pushover\|ntfy\|pockethub\|apprise\|webhook, config, min_priority, enabled}`. Config: Pushover `user token device? sound? max_priority?`; ntfy `url topic token?`; Pocket Hub none (needs `CORE_URL`); Apprise `url tag?`; webhook `url secret?` (sent as Bearer). Secrets come back masked |
 | `POST /channels/{id}/test`, `POST /channels/test` | Send a test now (the second with unsaved settings) |
 | `POST /channels/reorder` `{ids}`, `GET /channels/{id}/deliveries` | |
+
+**Pocket Hub** channels call Pocket Core's `POST /api/v1/push/notify` with Alerts' app token:
+`{"email","title","body","url","source","id","sound","thread"}` (`sound` for normal importance and up, `thread` = the source).
+Core seals the message for each of the person's Pocket Hub devices that has notifications on and hands it to the Pocket Push relay.
+Its answer `{"devices","sent","failed","gone","reason"}` decides the result: no device with notifications on, 401/403
+(not allowed) and 404 (a Core without Pocket Hub notifications) are refusals; every device failing, Core 5xx/429 or no
+answer are tried again after 1, 5 and 15 minutes.
 | `GET/POST /rules`, `PUT/DELETE /rules/{id}` | `{name, enabled, match {source_ids, min_priority, max_priority, words, tags}, action: send\|quiet\|drop, priority, channel_ids, break_quiet}` — checked in order, the first match decides |
 | `POST /rules/reorder` `{ids}`, `POST /rules/preview` `{match}` | What a rule would have caught in the last 30 days |
 

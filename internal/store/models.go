@@ -81,7 +81,7 @@ type Channel struct {
 	ID          int64             `json:"id"`
 	UserID      int64             `json:"-"`
 	Name        string            `json:"name"`
-	Kind        string            `json:"kind"` // pushover | ntfy | apprise | webhook
+	Kind        string            `json:"kind"` // pushover | ntfy | pockethub | apprise | webhook
 	Config      map[string]string `json:"config"`
 	MinPriority int               `json:"min_priority"`
 	Enabled     bool              `json:"enabled"`

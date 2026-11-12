@@ -47,6 +47,7 @@
   padding: 12px 14px; cursor: pointer; display: grid; gap: 4px; transition: border-color .12s, background .12s;
 }
 .src-kind:hover, .chan-kind:hover { background: var(--surface-2); }
+.chan-kind:disabled { opacity: .55; cursor: not-allowed; background: var(--surface); }
 .src-kind.active, .chan-kind.active { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .src-kind-t, .chan-kind-t { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; }
 .src-kind-d, .chan-kind-d { font-size: 12.5px; color: var(--muted); line-height: 1.45; }

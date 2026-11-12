@@ -112,7 +112,7 @@ export interface AppsInfo { apps: EventApp[]; core: boolean; stream: boolean; st
 
 // ---- channels ----
 
-export type ChannelKind = 'pushover' | 'ntfy' | 'apprise' | 'webhook'
+export type ChannelKind = 'pushover' | 'ntfy' | 'pockethub' | 'apprise' | 'webhook'
 
 export interface Channel {
   id: number; name: string; kind: ChannelKind

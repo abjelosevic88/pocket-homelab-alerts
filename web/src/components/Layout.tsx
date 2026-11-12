@@ -166,7 +166,7 @@ export default function Layout() {
     { id: 'markall', label: 'Mark everything read', icon: 'check', keywords: 'read all clear', run: () => { api.post(`${V1}/alerts/mark`, { what: 'read' }).then(announceChange).catch(() => {}) } },
     { id: 'sources', label: 'Sources', icon: 'antenna', hint: 'S', keywords: 'where from apprise ntfy webhook topics', run: () => navigate('/sources') },
     { id: 'source', label: 'Add a source', icon: 'plus', hint: 'N', keywords: 'new address apprise ntfy follow', run: () => create('source') },
-    { id: 'sendto', label: 'Send to', icon: 'smartphone', hint: 'T', keywords: 'channels pushover ntfy phone apprise webhook', run: () => navigate('/send-to') },
+    { id: 'sendto', label: 'Send to', icon: 'smartphone', hint: 'T', keywords: 'channels pushover ntfy pocket hub mac iphone ipad phone apprise webhook', run: () => navigate('/send-to') },
     { id: 'channel', label: 'Add a place to send to', icon: 'plus', hint: 'C', keywords: 'new channel pushover ntfy phone', run: () => create('channel') },
     { id: 'rules', label: 'Rules', icon: 'sliders', hint: 'R', keywords: 'filter mute route', run: () => navigate('/rules') },
     { id: 'rule', label: 'Make a rule', icon: 'plus', hint: 'M', keywords: 'new filter', run: () => create('rule') },

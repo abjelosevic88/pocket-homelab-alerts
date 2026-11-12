@@ -1,4 +1,4 @@
-// Add or change a place alerts go to: Pushover, ntfy, Apprise or a webhook.
+// Add or change a place alerts go to: Pushover, ntfy, Pocket Hub, Apprise or a webhook.
 import { useEffect, useState, type ChangeEvent } from 'react'
 import { api, V1 } from '../lib/api'
 import { useApp } from '../lib/app-context'
@@ -12,6 +12,7 @@ import { Confirm, Field, Modal, SettingRow, Spinner, Switch, errMsg } from './ui
 export const CHANNEL_KINDS: { id: ChannelKind; name: string; icon: string; d: string }[] = [
   { id: 'pushover', name: 'Pushover', icon: 'smartphone', d: 'The Pushover app on your phone, tablet or watch. Reliable, with sounds and quiet levels.' },
   { id: 'ntfy', name: 'ntfy', icon: 'bell', d: 'A topic on an ntfy server; the ntfy app shows what arrives.' },
+  { id: 'pockethub', name: 'Pocket Hub', icon: 'monitor', d: 'Your Macs, iPhones and iPads with Pocket Hub' },
   { id: 'apprise', name: 'Apprise', icon: 'share', d: 'An Apprise gateway: Telegram, email, Signal, Slack and about a hundred more.' },
   { id: 'webhook', name: 'Webhook', icon: 'code', d: 'Any address that takes the alert as JSON (Home Assistant, n8n, your own script).' },
 ]
@@ -74,6 +75,7 @@ export function ChanEditor({ channel, onClose, onSaved, onDeleted }: { channel: 
     try { await api.del(`${V1}/channels/${channel.id}`); onDeleted() } catch (e) { setErr(errMsg(e)) }
   }
 
+  const hubOK = !!settings?.core_configured
   const localNote = settings && !settings.local_targets ? ' Addresses on the local network only work for the box’s admins.' : ''
   return (
     <Modal title={channel ? channel.name : 'Add a place to send to'} onClose={onClose} size="lg" footer={<>
@@ -85,12 +87,15 @@ export function ChanEditor({ channel, onClose, onSaved, onDeleted }: { channel: 
       <form className="stack" onSubmit={e => { e.preventDefault(); save() }}>
         {!channel && (
           <div className="chan-kinds" role="radiogroup" aria-label="Where to send">
-            {CHANNEL_KINDS.map(k => (
-              <button key={k.id} type="button" role="radio" aria-checked={kind === k.id} className={`chan-kind ${kind === k.id ? 'active' : ''}`} onClick={() => pick(k.id)}>
-                <span className="chan-kind-t"><Icon name={k.icon} size={16} />{k.name}</span>
-                <span className="chan-kind-d">{k.d}</span>
-              </button>
-            ))}
+            {CHANNEL_KINDS.map(k => {
+              const off = k.id === 'pockethub' && !hubOK
+              return (
+                <button key={k.id} type="button" role="radio" aria-checked={kind === k.id} className={`chan-kind ${kind === k.id ? 'active' : ''}`} onClick={() => pick(k.id)} disabled={off} title={off ? 'Needs Pocket Core: Pocket Hub notifications go through it' : undefined}>
+                  <span className="chan-kind-t"><Icon name={k.icon} size={16} />{k.name}</span>
+                  <span className="chan-kind-d">{off ? 'Needs Pocket Core, which this Pocket Alerts is not connected to.' : k.d}</span>
+                </button>
+              )
+            })}
           </div>
         )}
         <Field label="Name" help="So you can tell your places apart, like “iPhone” or “Family Telegram”.">
@@ -118,6 +123,10 @@ export function ChanEditor({ channel, onClose, onSaved, onDeleted }: { channel: 
           </div>
           <Field label="Access token (optional)" help="An ntfy access token, or user:password, if the topic is protected."><input value={cfg.token || ''} onChange={set('token')} autoComplete="off" /></Field>
         </>}
+
+        {kind === 'pockethub' && (
+          <p className="muted small">Alerts show up as notifications on every Mac, iPhone and iPad where you use Pocket Hub, through Pocket Core. Nothing to set up here: turn notifications on in Pocket Hub → Settings on each device, then send a test.</p>
+        )}
 
         {kind === 'apprise' && <>
           <Field label="Apprise address" help={'The notify address of a route on your Apprise gateway.' + localNote}><input value={cfg.url || ''} onChange={set('url')} inputMode="url" placeholder="http://apprise:8000/notify/phone" /></Field>

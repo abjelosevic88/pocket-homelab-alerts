@@ -40,7 +40,7 @@ export default function SendTo() {
           : !list ? <div className="set-section-body"><Loading /></div>
             : list.length === 0 ? (
               <Empty icon="smartphone" title="Nothing goes to your phone yet">
-                Alerts are kept in your inbox. Add Pushover, ntfy, Apprise or a webhook to be told about them.
+                Alerts are kept in your inbox. Add Pushover, ntfy, Pocket Hub, Apprise or a webhook to be told about them.
               </Empty>
             ) : (
               <ul className="chan-list">

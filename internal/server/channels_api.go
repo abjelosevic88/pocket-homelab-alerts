@@ -49,10 +49,11 @@ type channelInput struct {
 
 // channelConfigKeys are the settings each kind keeps.
 var channelConfigKeys = map[string][]string{
-	"pushover": {"user", "token", "device", "sound", "max_priority"},
-	"ntfy":     {"url", "topic", "token"},
-	"apprise":  {"url", "tag"},
-	"webhook":  {"url", "secret"},
+	"pushover":  {"user", "token", "device", "sound", "max_priority"},
+	"ntfy":      {"url", "topic", "token"},
+	"apprise":   {"url", "tag"},
+	"webhook":   {"url", "secret"},
+	"pockethub": {},
 }
 
 func (in channelInput) apply(c *store.Channel) string {
@@ -108,7 +109,7 @@ func (in channelInput) apply(c *store.Channel) string {
 		return "an ntfy topic has only letters, digits, - and _"
 	}
 	if c.Name == "" {
-		c.Name = map[string]string{"pushover": "Pushover", "ntfy": "ntfy", "apprise": "Apprise", "webhook": "Webhook"}[c.Kind]
+		c.Name = map[string]string{"pushover": "Pushover", "ntfy": "ntfy", "apprise": "Apprise", "webhook": "Webhook", "pockethub": "Pocket Hub"}[c.Kind]
 	}
 	return ""
 }
@@ -121,11 +122,11 @@ func (s *Server) handleCreateChannel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if _, ok := channelKinds[in.Kind]; !ok {
-		writeErr(w, http.StatusBadRequest, "a channel is Pushover, ntfy, Apprise or a webhook")
+		writeErr(w, http.StatusBadRequest, "a channel is Pushover, ntfy, Pocket Hub, Apprise or a webhook")
 		return
 	}
 	c := &store.Channel{Kind: in.Kind, MinPriority: 1, Enabled: true, Config: map[string]string{}}
-	if msg := in.apply(c); msg != "" {
+	if msg := firstNonEmpty(s.hubReady(c), in.apply(c)); msg != "" {
 		writeErr(w, http.StatusBadRequest, msg)
 		return
 	}
@@ -207,7 +208,7 @@ func (s *Server) handleTestChannel(w http.ResponseWriter, r *http.Request) {
 		}
 		c = &store.Channel{Kind: in.Kind, MinPriority: 1, Enabled: true, Config: map[string]string{}}
 	}
-	if msg := in.apply(c); msg != "" {
+	if msg := firstNonEmpty(s.hubReady(c), in.apply(c)); msg != "" {
 		writeJSON(w, http.StatusOK, map[string]any{"ok": false, "error": msg})
 		return
 	}

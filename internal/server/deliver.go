@@ -20,9 +20,10 @@ import (
 
 // ---- sending to channels ----
 //
-// Pushover and ntfy are phone apps; Apprise reaches about a hundred other
-// services (Telegram, email, Signal, Slack…); a webhook gets the alert as
-// JSON. A failed send is tried again after 1, 5 and 15 minutes when the
+// Pushover and ntfy are phone apps; Pocket Hub shows it as a system
+// notification on the person's Macs, iPhones and iPads (through Pocket
+// Core, pockethub.go); Apprise reaches about a hundred other services
+// (Telegram, email, Signal, Slack…); a webhook gets the alert as JSON. A failed send is tried again after 1, 5 and 15 minutes when the
 // failure looks passing (no answer, 429, 5xx); a refusal (wrong key) is not.
 
 // channelKinds are the kinds of channel and the settings each needs.
@@ -31,6 +32,8 @@ var channelKinds = map[string][]string{
 	"ntfy":     {"url", "topic"},
 	"apprise":  {"url"},
 	"webhook":  {"url"},
+	// pockethub needs no settings: Core knows the person's devices.
+	"pockethub": {},
 }
 
 // secretKeys are channel settings never shown back in full.
@@ -93,6 +96,10 @@ func (s *Server) send(ctx context.Context, uid int64, c *store.Channel, m outMsg
 		return s.sendPushover(ctx, hc, c, m, emo, labels)
 	case "ntfy":
 		return s.sendNtfy(ctx, hc, c, m)
+	case "pockethub":
+		// Core's address comes from the operator (CORE_URL), not from
+		// someone typing it in, so it may be on the local network.
+		return s.sendPocketHub(ctx, s.outClient(20*time.Second, true), uid, m, emo)
 	case "apprise":
 		title := m.Title
 		if emo != "" {
