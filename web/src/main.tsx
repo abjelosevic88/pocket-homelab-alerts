@@ -11,6 +11,7 @@ import { AppProvider, useApp } from './lib/app-context'
 import { Loading, ToastProvider } from './components/ui'
 import Layout from './components/Layout'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { HubReport } from './components/HubReport'
 import Login from './pages/Login'
 import Inbox from './pages/Inbox'
 import Sources, { SourcePage } from './pages/Sources'
@@ -53,7 +54,7 @@ function App() {
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter>
-      <ErrorBoundary where="app"><ToastProvider><AppProvider><App /></AppProvider></ToastProvider></ErrorBoundary>
+      <ErrorBoundary where="app"><ToastProvider><AppProvider><HubReport /><App /></AppProvider></ToastProvider></ErrorBoundary>
     </BrowserRouter>
   </React.StrictMode>,
 )
