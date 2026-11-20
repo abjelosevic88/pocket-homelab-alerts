@@ -88,6 +88,8 @@ answer are tried again after 1, 5 and 15 minutes.
 `GET/PUT /settings` (quiet hours `quiet_*`, `group_minutes`, `send_min_priority`, `keep_*_days`, Pocket Tasks, AI),
 `GET /export.json`, `GET /export.csv`, `POST /import`, `GET /backup` (admin), `GET/POST/DELETE /tokens`, `GET /ai/status`, `POST /ai/ask`.
 
+Pocket Move can copy your sources, channels, rules and alerts out and bring them in: `GET /pocket/portable` describes the exports (link scope `move:export`) and the import (`move:import`, the JSON as the raw body; a second run of the same file adds nothing).
+
 ## Pocket Core
 
 Offers `alerts:read` (`/dashboard /alerts /alerts/{id} /sources /day/{date}`) and `alerts:write` (`POST /alerts` — the
