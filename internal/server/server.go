@@ -247,12 +247,12 @@ func (s *Server) registerWithCore(ctx context.Context) error {
 	m := core.Manifest{
 		Slug: "alerts", Name: "Pocket Alerts",
 		Description: "One inbox for every alert: from scripts, servers and apps (Apprise, ntfy, webhooks and the other Pocket apps), with rules, quiet hours and snooze, sent on to your phone through Pushover, ntfy, Pocket Hub, Apprise or a webhook.",
-		Icon:        "/favicon.svg", Version: Version,
+		Icon:        "/favicon.svg", Version: Version, Category: "System",
 		URL: s.cfg.CoreAppURL, PublicURL: s.cfg.BaseURL, HealthPath: "/healthz", EnvPrefix: "ALERTS",
 		Publishes: eventTopics,
 		Offers:    linkOffers,
 		Uses:      append(linkUses(), core.InferenceUse()),
-		Portable:  portable,
+		Portable:  portable, Capabilities: capabilities,
 	}
 	if s.cfg.BaseURL != "" {
 		m.OIDC = &core.OIDCRequest{RedirectURIs: []string{s.oidcCallbackURL()}}

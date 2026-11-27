@@ -345,6 +345,47 @@ func (s *Store) AlertDays(ctx context.Context, uid int64, from, to, offset strin
 	return out, rows.Err()
 }
 
+// ---- what Pocket Search, Pocket Day and Pocket Hub read ----
+
+// SearchAlerts finds a person's alerts with every word somewhere in the
+// title, text, source or tags (where the inbox search looks), newest first.
+func (s *Store) SearchAlerts(ctx context.Context, uid int64, words []string, limit int) ([]Alert, error) {
+	if len(words) == 0 {
+		return []Alert{}, nil
+	}
+	q := `SELECT ` + alertCols + ` FROM alerts WHERE user_id = ?`
+	args := []any{uid}
+	for _, w := range words {
+		q += ` AND (title LIKE ? ESCAPE '\' OR body LIKE ? ESCAPE '\' OR source_name LIKE ? ESCAPE '\' OR tags LIKE ? ESCAPE '\')`
+		like := "%" + escapeLike(w) + "%"
+		args = append(args, like, like, like, like)
+	}
+	q += ` ORDER BY last_seen_at DESC, id DESC LIMIT ?`
+	return s.queryAlerts(ctx, q, append(args, limit)...)
+}
+
+// AlertsReceived lists the alerts a person got between from and to
+// (received_at), the most important first, then the earliest. An alert is
+// last seen no earlier than it came in, so the last_seen_at bound only lets
+// the index skip older rows.
+func (s *Store) AlertsReceived(ctx context.Context, uid int64, from, to string, limit int) ([]Alert, error) {
+	return s.queryAlerts(ctx, `SELECT `+alertCols+` FROM alerts WHERE user_id = ? AND last_seen_at >= ? AND received_at >= ? AND received_at < ?
+		ORDER BY priority DESC, received_at, id LIMIT ?`, uid, from, from, to, limit)
+}
+
+// OpenAlerts lists a person's open (not done) alerts, the most urgent
+// first, then the newest.
+func (s *Store) OpenAlerts(ctx context.Context, uid int64, limit int) ([]Alert, error) {
+	return s.queryAlerts(ctx, `SELECT `+alertCols+` FROM alerts WHERE user_id = ? AND done_at IS NULL
+		ORDER BY priority DESC, last_seen_at DESC, id DESC LIMIT ?`, uid, limit)
+}
+
+// CountOpen counts a person's open alerts and how many of them are urgent.
+func (s *Store) CountOpen(ctx context.Context, uid int64) (open, urgent int, err error) {
+	err = s.DB.QueryRowContext(ctx, `SELECT COUNT(1), COALESCE(SUM(priority >= 5), 0) FROM alerts WHERE user_id = ? AND done_at IS NULL`, uid).Scan(&open, &urgent)
+	return open, urgent, err
+}
+
 // ---- deliveries ----
 
 // AddDelivery records a try.

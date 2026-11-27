@@ -33,6 +33,16 @@ var portable = &core.Portable{
 	},
 }
 
+// capabilities is what Pocket Search, Pocket Day and Pocket Hub may ask
+// Alerts (docs/capabilities.md in pocket-homelab-core); Register adds the
+// pocket:* offers. The routes are in capabilities.go; all three only read.
+// No capture: an alert comes from a source, not from a line a person types.
+var capabilities = core.Capabilities{
+	Search: &core.Searchable{What: "Your alerts, by title, text and where they came from", Kinds: []string{"alert"}, Bangs: []string{"alerts", "alert"}},
+	Day:    &core.DayFeed{Label: "Alerts", One: "alert", Many: "alerts", What: "The alerts that came in that day, the most important first"},
+	Widget: &core.Widget{Title: "Alerts", What: "Your open alerts, the most urgent first"},
+}
+
 type linkRoute struct {
 	methods string
 	path    *regexp.Regexp
@@ -51,7 +61,7 @@ var errLinkScope = errors.New("outside the link's scope")
 
 // linkAllows reports whether a link token with these scopes may make this request.
 func linkAllows(scopes []string, r *http.Request) bool {
-	if portable.LinkAllows(scopes, r) {
+	if portable.LinkAllows(scopes, r) || capabilities.LinkAllows(scopes, r) {
 		return true
 	}
 	for _, lr := range linkRoutes {

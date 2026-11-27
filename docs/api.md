@@ -93,6 +93,17 @@ Pocket Move can copy your sources, channels, rules and alerts out and bring them
 ## Pocket Core
 
 Offers `alerts:read` (`/dashboard /alerts /alerts/{id} /sources /day/{date}`) and `alerts:write` (`POST /alerts` — the
-acting app becomes the source). Publishes `alerts.received` (every new alert: `alert_id title body priority source
+acting app becomes the source). Category `System`; the capabilities (docs/capabilities.md in pocket-homelab-core), each
+its own link scope and read-only, as the person the caller acts for:
+
+| Call | Scope | What |
+| :--- | :--- | :--- |
+| `GET /pocket/search?q=&limit=` | `pocket:search` | Alerts with every word in the title, text, source or tags (bangs `!alerts`, `!alert`); a title match first, then the newest. Snippet: source · importance · unread/read/done · how long ago |
+| `GET /pocket/day/{date}?tz=` | `pocket:day` | The alerts that came in that day, the most important first, the ones done marked done; summary like "5 alerts, 1 urgent" |
+| `GET /pocket/widget` | `pocket:widget` | The open alerts, the most urgent first (source · how long ago); line like "1 urgent, 3 open", nothing when nothing is open |
+
+No capture: an alert comes from a source.
+
+Publishes `alerts.received` (every new alert: `alert_id title body priority source
 state tags url`) and `alerts.done`. Uses `tasks:write` on Pocket Tasks and `events:read` on Pocket Monitoring, Backups,
 Documents, Subtitles, Tasks and AI (their alert events — and Tasks' reminders — become alerts; a "resolved" event closes the alert it resolves).
